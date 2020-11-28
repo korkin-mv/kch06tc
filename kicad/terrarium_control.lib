@@ -6,7 +6,7 @@ EESchema-LIBRARY Version 2.4
 DEF M5 D 0 40 N N 1 F N
 F0 "D" 0 100 50 H V C CNN
 F1 "M5" 0 -100 50 H V C CNN
-F2 "" 0 0 50 H I C CNN
+F2 "Diode_SMD:D_SMA_Handsoldering" 0 0 50 H I C CNN
 F3 "" 0 0 50 H I C CNN
 $FPLIST
  TO-???*
@@ -28,7 +28,7 @@ ENDDEF
 DEF NRP-10-C-05D K 0 40 Y Y 1 F N
 F0 "K" 800 0 50 H V C CNN
 F1 "NRP-10-C-05D" 800 -100 50 H V C CNN
-F2 "tl_local:NRP-10-C" 800 0 50 H I C CNN
+F2 "terrarium_control:NRP-10-C" 800 0 50 H I C CNN
 F3 "" 800 0 50 H I C CNN
 DRAW
 S -350 150 450 -250 1 1 10 f
