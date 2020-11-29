@@ -1174,7 +1174,7 @@ U 1 1 5FCC71CD
 P 900 6800
 F 0 "BT1" H 1018 6896 50  0000 L CNN
 F 1 "CR2032" H 1018 6805 50  0000 L CNN
-F 2 "Battery:BatteryHolder_Keystone_106_1x20mm" V 900 6860 50  0001 C CNN
+F 2 "terrarium_control:batt_holder" V 900 6860 50  0001 C CNN
 F 3 "~" V 900 6860 50  0001 C CNN
 	1    900  6800
 	1    0    0    -1  
