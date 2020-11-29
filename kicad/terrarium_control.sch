@@ -1586,4 +1586,27 @@ F 3 "" H 5450 5950 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	5450 5950 5550 5950
+Text Label 3900 1800 0    50   ~ 0
+X+
+Text Label 3900 2000 0    50   ~ 0
+X-
+$Comp
+L Device:R_Small JP1
+U 1 1 5FCF1FA4
+P 6050 6800
+F 0 "JP1" V 5854 6800 50  0000 C CNN
+F 1 "0R" V 5945 6800 50  0000 C CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 6050 6800 50  0001 C CNN
+F 3 "~" H 6050 6800 50  0001 C CNN
+	1    6050 6800
+	0    1    1    0   
+$EndComp
+Text GLabel 5850 6800 0    50   UnSpc ~ 0
+SQW
+Text GLabel 6250 6800 2    50   UnSpc ~ 0
+SQW
+Wire Wire Line
+	5850 6800 5950 6800
+Wire Wire Line
+	6150 6800 6250 6800
 $EndSCHEMATC
