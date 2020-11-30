@@ -1,4 +1,4 @@
-update=Пн 30 ноя 2020 02:58:26
+update=Пн 30 ноя 2020 19:24:33
 version=1
 last_client=kicad
 [general]
@@ -41,6 +41,8 @@ MinHoleToHole=1
 TrackWidth1=0.3
 TrackWidth2=0.4
 TrackWidth3=0.65
+TrackWidth4=1
+TrackWidth5=2
 ViaDiameter1=1.5
 ViaDrill1=1
 dPairWidth1=0.3
@@ -251,7 +253,7 @@ dPairViaGap=0.25
 [pcbnew/Netclasses/1]
 Name=220V
 Clearance=1
-TrackWidth=1.5
+TrackWidth=2
 ViaDiameter=1.5
 ViaDrill=1
 uViaDiameter=0.3
