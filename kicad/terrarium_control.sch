@@ -554,7 +554,7 @@ Wire Wire Line
 NoConn ~ 2250 3550
 NoConn ~ 2250 3650
 $Comp
-L Connector_Generic:Conn_02x03_Counter_Clockwise J4
+L Connector_Generic:Conn_02x03_Odd_Even J4
 U 1 1 5FC02A64
 P 4600 5100
 F 0 "J4" H 4650 5417 50  0000 C CNN
