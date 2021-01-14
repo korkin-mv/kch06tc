@@ -1,0 +1,9 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#define UART_BAUDRATE 9600
+#define UART_BUFFERING_SIZE 16
+#define VT_INPUT_BUFFER_SIZE 32
+#define ENABLE_UART_DOUBLE_SPEEN 1
+
+#endif//CONFIG_H
