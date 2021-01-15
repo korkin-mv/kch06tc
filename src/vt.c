@@ -11,7 +11,7 @@
 const char vt_newline[] PROGMEM = "\r\n";
 
 static const char _prompt[] PROGMEM = "> ";
-static const char _newline_promtp[] PROGMEM = "\r\n> ";
+static const char _newline_prompt[] PROGMEM = "\r\n> ";
 static const char _backspace[] PROGMEM = "\b \b";
 
 static struct pt_sem _output_sem;
@@ -31,7 +31,7 @@ PT_THREAD(vt_task(struct pt *pt, void *data))
     static struct pt _pt;
     static char c;
     PT_BEGIN(pt);
-    PT_SPAWN(pt, &_pt, vt_puts_P(&_pt, _newline_promtp));
+    PT_SPAWN(pt, &_pt, vt_puts_P(&_pt, _newline_prompt));
     for (;;)
     {
         PT_SPAWN(pt, &_pt, uart_getc(&_pt, &c));
@@ -51,12 +51,12 @@ PT_THREAD(vt_task(struct pt *pt, void *data))
                 PT_SPAWN(pt, &_pt, vt_puts_P(&_pt, vt_newline));
                 PT_SPAWN(pt, &_pt, vt_puts(&_pt, _input_buffer));
                 _input_count = 0;
-                PT_SPAWN(pt, &_pt, vt_puts_P(&_pt, _newline_promtp));
+                PT_SPAWN(pt, &_pt, vt_puts_P(&_pt, _newline_prompt));
             }
             else if (c == '\e')
             {
                 _input_count = 0;
-                PT_SPAWN(pt, &_pt, vt_puts_P(&_pt, _newline_promtp));
+                PT_SPAWN(pt, &_pt, vt_puts_P(&_pt, _newline_prompt));
             }
             else
             {
