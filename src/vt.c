@@ -1,69 +1,159 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <pt/pt-sem.h>
 
-#include "config.h"
 #include "vt.h"
 #include "uart.h"
+#include "text.h"
+#include "queue.h"
 
-const char vt_newline[] PROGMEM = "\r\n";
+#if VT_OUTPUT_ESC_SEQ_SIZE < 4
+#error VT_OUTPUT_ESC_SEQ_SIZE is small.
+#endif
 
-static const char _prompt[] PROGMEM = "> ";
-static const char _newline_prompt[] PROGMEM = "\r\n> ";
-static const char _backspace[] PROGMEM = "\b \b";
+#define KEY_BACKSPACE '\b'
+#define KEY_ESCAPE '\e'
+#define KEY_SPACE ' '
+#define KEY_ENTER '\r'
+#define KEY_NEWLINE '\n'
+#define KEY_TAB '\t'
+
+#define ESC_CSI '['
+
+#define CSI_FORWARD 'D'
+#define CSI_BACK 'C'
+#define CSI_ERASE_IN_LINE 'K'
 
 static struct pt_sem _output_sem;
-static char _input_buffer[VT_INPUT_BUFFER_SIZE];
-static size_t _input_count;
 
-void vt_init(void)
+static void _strcatc(char *s, char c)
+{
+    for (;*s;s++);
+    *s = c;
+    *(++s) = '\0';
+}
+
+static void _gen_csi_forward(char *s, int n)
+{
+    *(s++) = KEY_ESCAPE;
+    *(s++) = ESC_CSI;
+    itoa(n, s, 10);
+    _strcatc(s, CSI_FORWARD);
+}
+
+void vt_init(vt_data_t *data, shell_data_t *shell)
 {
     uart_init();
+    data->shell = shell;
+    editor_init(&data->ed, data->inbuf, sizeof(data->inbuf));
     PT_SEM_INIT(&_output_sem, 1);
-    _input_buffer[0] = '\0';
-    _input_count = 0;
 }
 
 PT_THREAD(vt_task(struct pt *pt, void *data))
 {
-    static struct pt _pt;
-    static char c;
+    vt_data_t * const d = data;
+    struct pt * const cpt = &d->child_pt;
+    editor_t * const ed = &d->ed;
+
     PT_BEGIN(pt);
-    PT_SPAWN(pt, &_pt, vt_puts_P(&_pt, _newline_prompt));
-    for (;;)
+    PT_SPAWN(pt, cpt, vt_puts_P(cpt, text_prompt));
+    d->state = VT_STATE_DEFAULT;
+    for(;;)
     {
-        PT_SPAWN(pt, &_pt, uart_getc(&_pt, &c));
-        if (isprint(c) || isspace(c) || c == '\b' || c == '\e')
+        PT_SPAWN(pt, cpt, uart_getc(cpt, &d->c));
+        switch (d->state)
         {
-            if (c =='\b')
+        case VT_STATE_ESCAPE:
+            switch (d->c)
             {
-                if (_input_count > 0)
+            case ESC_CSI:
+                d->state = VT_STATE_CSI;
+                _strcatc(d->esc_seq, d->c);
+                break;
+            default:
+                d->state = VT_STATE_DEFAULT;
+            }
+            break;
+        case VT_STATE_CSI:
+            switch (d->c)
+            {
+            case CSI_FORWARD:
+                if (editor_cursor_move(ed, ED_LEFT))
+                    _strcatc(d->esc_seq, d->c);
+                else
+                    d->esc_seq[0] = '\0';
+                d->state = VT_STATE_ESCAPE_FINAL;
+                break;
+            case CSI_BACK:
+                if (editor_cursor_move(ed, ED_RIGHT))
+                    _strcatc(d->esc_seq, d->c);
+                else
+                    d->esc_seq[0] = '\0';
+                d->state = VT_STATE_ESCAPE_FINAL;
+                break;
+            default:
+                d->state = VT_STATE_DEFAULT;
+            }
+            if (d->state == VT_STATE_ESCAPE_FINAL)
+            {
+                if (*d->esc_seq)
+                    PT_SPAWN(pt, cpt, vt_puts(cpt, d->esc_seq));
+                d->state = VT_STATE_DEFAULT;
+            }
+            break;
+        case VT_STATE_DEFAULT:
+        default:
+            switch (d->c)
+            {
+            case KEY_BACKSPACE:
+                if (editor_delete(ed))
                 {
-                    --_input_count;
-                    PT_SPAWN(pt, &_pt, vt_puts_P(&_pt, _backspace));
+                    PT_SPAWN(pt, cpt, vt_puts_P(cpt, text_backspace));
+                    if (!editor_cursor_at_end(ed))
+                    {
+                        PT_SPAWN(pt, cpt, vt_puts_P(cpt, text_delete_in_line));
+                        PT_SPAWN(pt, cpt, vt_puts(cpt, editor_cursor(ed)));
+                        _gen_csi_forward(d->esc_seq, editor_cursor_length(ed));
+                        PT_SPAWN(pt, cpt, vt_puts(cpt, d->esc_seq));
+                    }
                 }
-            }
-            else if (c =='\r')
-            {
-                _input_buffer[_input_count] = '\0';
-                PT_SPAWN(pt, &_pt, vt_puts_P(&_pt, vt_newline));
-                PT_SPAWN(pt, &_pt, vt_puts(&_pt, _input_buffer));
-                _input_count = 0;
-                PT_SPAWN(pt, &_pt, vt_puts_P(&_pt, _newline_prompt));
-            }
-            else if (c == '\e')
-            {
-                _input_count = 0;
-                PT_SPAWN(pt, &_pt, vt_puts_P(&_pt, _newline_prompt));
-            }
-            else
-            {
-                if (_input_count < VT_INPUT_BUFFER_SIZE-1)
+                break;
+            case KEY_NEWLINE:
+                break;
+            case KEY_ENTER:
+                PT_SPAWN(pt, cpt, vt_puts_P(cpt, text_newline));
+                if (!editor_empty(ed))
                 {
-                    _input_buffer[_input_count++] = c;
-                    PT_SPAWN(pt, &_pt, uart_putc(&_pt, c));
+                    PT_SPAWN(pt, cpt, shell_exec(cpt, d->shell, d->inbuf));
+                    editor_clean(ed);
+                }
+                PT_SPAWN(pt, cpt, vt_puts_P(cpt, text_prompt));
+                editor_clean(ed);
+                break;
+            case KEY_TAB:
+                break;
+            case KEY_ESCAPE:
+                d->esc_seq[0] = KEY_ESCAPE;
+                d->esc_seq[1] = '\0';
+                d->state = VT_STATE_ESCAPE;
+                break;
+            default:
+                if (isprint(d->c) || d->c == KEY_SPACE)
+                {
+                    if (editor_append(ed, d->c))
+                    {
+                        PT_SPAWN(pt, cpt, uart_putc(cpt, d->c));
+                        if (!editor_cursor_at_end(ed))
+                        {
+                            PT_SPAWN(pt, cpt, vt_puts(cpt, editor_cursor(ed)));
+                            _gen_csi_forward(d->esc_seq, editor_cursor_length(ed));
+                            PT_SPAWN(pt, cpt, vt_puts(cpt, d->esc_seq));
+                        }
+                    }
                 }
             }
         }
@@ -74,15 +164,15 @@ PT_THREAD(vt_task(struct pt *pt, void *data))
 
 PT_THREAD(vt_puts(struct pt *pt, const char *s))
 {
-    static struct pt _pt;
-    static const char *_s;
+    static struct pt cpt;
+    static const char *ls;
     PT_BEGIN(pt);
     PT_SEM_WAIT(pt, &_output_sem);
-    _s = s;
-    while (*_s)
+    ls = s;
+    while (*ls)
     {
-        PT_SPAWN(pt, &_pt, uart_putc(&_pt, *_s));
-        ++_s;
+        PT_SPAWN(pt, &cpt, uart_putc(&cpt, *ls));
+        ++ls;
     }
     PT_SEM_SIGNAL(pt, &_output_sem);
     PT_END(pt);
@@ -90,19 +180,23 @@ PT_THREAD(vt_puts(struct pt *pt, const char *s))
 
 PT_THREAD(vt_puts_P(struct pt *pt, PGM_P s))
 {
-    static struct pt _pt;
-    static const char *_s;
+    static struct pt cpt;
+    static const char *ls;
     static char c;
     PT_BEGIN(pt);
     PT_SEM_WAIT(pt, &_output_sem);
-    _s = s;
-    c = pgm_read_byte(_s);
+    ls = s;
+    c = pgm_read_byte(ls);
     while (c)
     {
-        PT_SPAWN(pt, &_pt, uart_putc(&_pt, c));
-        c = pgm_read_byte(++_s);
+        PT_SPAWN(pt, &cpt, uart_putc(&cpt, c));
+        c = pgm_read_byte(++ls);
     }
     PT_SEM_SIGNAL(pt, &_output_sem);
     PT_END(pt);
 }
 
+PT_THREAD(vt_putc(struct pt *pt, char c))
+{
+    return uart_putc(pt, c);
+}

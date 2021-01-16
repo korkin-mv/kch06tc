@@ -22,57 +22,70 @@ void editor_clean(editor_t *editor)
     editor->last = editor->begin;
 }
 
-void editor_append(editor_t *editor, char c)
+bool editor_append(editor_t *editor, char c)
 {
     char *p;
+
     assert(editor != NULL);
     const bool cursor_not_at_end = editor->cursor < editor->last;
     if (editor->cursor >= editor->end - 1 ||
         (cursor_not_at_end && editor->last > editor->end - 2) ||
         c == '\0')
-        return;
+    {
+        return false;
+    }
 
     if (cursor_not_at_end)
-    {
         for (p = editor->last; p > editor->cursor; p--)
             *p = *(p-1);
-    }
     if (editor->last < editor->end - 1)
         *(++editor->last) = '\0';
     *(editor->cursor++) = c;
+
+    return true;
 }
 
-void editor_delete(editor_t *editor)
+bool editor_delete(editor_t *editor)
 {
     char *p;
     assert(editor != NULL);
     if (editor->cursor <= editor->begin)
-        return;
+        return false;
 
     --editor->cursor;
     for (p = editor->cursor; p < editor->last - 1; p++)
         *p = *(p+1);
     *(--editor->last) = '\0';
+
+    return true;
 }
 
-void editor_cursor_move(editor_t *editor, editor_side_t side)
+bool editor_cursor_move(editor_t *editor, editor_side_t side)
 {
     assert(editor != NULL);
     switch (side)
     {
     case ED_LEFT:
         if (editor->cursor > editor->begin)
+        {
             --editor->cursor;
+            return true;
+        }
         break;
     case ED_RIGHT:
         if (editor->cursor < editor->last)
+        {
             ++editor->cursor;
+            return true;
+        }
         break;
     case ED_BEGIN:
         editor->cursor = editor->begin;
-        break;
+        return true;
     case ED_END:
         editor->cursor = editor->last;
-        break;
+        return true;
     }
+
+    return false;
 }

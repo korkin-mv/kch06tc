@@ -19,9 +19,6 @@ extern void queue_init(
     size_t item_size
 );
 
-extern bool queue_empty(const queue_t *queue);
-extern bool queue_full(const queue_t *queue);
-
 extern bool queue_pushvp(queue_t *queue, const void *value);
 extern bool queue_pushc(queue_t *queue, char c);
 #define queue_push(q, v) _Generic((v), \
@@ -36,5 +33,14 @@ extern bool queue_popc(queue_t *queue, char *c);
     default: queue_popvp \
 )(q, v)
 
+static inline bool queue_empty(const queue_t *queue)
+{
+    return queue->store_size <= 0;
+}
+
+static inline bool queue_full(const queue_t *queue)
+{
+    return queue->begin + queue->store_size >= queue->end;
+}
 
 #endif//QUEUE_H

@@ -26,16 +26,6 @@ static void *_increment_pointer(queue_t *queue, size_t item_size, void *pointer)
     return pointer;
 }
 
-bool queue_empty(const queue_t *queue)
-{
-    return queue->store_size <= 0;
-}
-
-bool queue_full(const queue_t *queue)
-{
-    return queue->begin + queue->store_size >= queue->end;
-}
-
 bool queue_pushvp(queue_t *queue, const void *value)
 {
     if (queue_full(queue))

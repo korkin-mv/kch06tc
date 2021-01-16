@@ -14,16 +14,18 @@ set(MCU atmega88pa)
 set(F_CPU 8000000UL)
 set(PROG_TYPE usbasp)
 set(PROG_MCU m88p)
+set(OPT_FLAG -O3)
 
 add_definitions(
     -DF_CPU=${F_CPU}
     -DPROJECT_NAME=${PROJECT_NAME}
     -DPROJECT_VERSION=${PROJECT_VERSION}
     -DLC_INCLUDE=\"lc-addrlabels.h\"
+    -DNDEBUG
 )
 
 add_compile_options(
-    -Os
+    ${OPT_FLAG}
     -mmcu=${MCU}
     -Wall
     -Wstrict-prototypes
@@ -31,17 +33,22 @@ add_compile_options(
     -funsigned-bitfields
     -fpack-struct
     -fshort-enums
+    -flto
+    -pipe
 )
 
 add_link_options(
+    ${OPT_FLAG}
+    -Wall
     -mmcu=${MCU}
+    -flto
 )
 
 include_directories(
     lib/
 )
 
-file(GLOB SRC_FILES "src/*.c")
+file(GLOB SRC_FILES "src/*.c" "src/sh/*.c")
 
 add_executable(${PROJECT_NAME} ${SRC_FILES})
 

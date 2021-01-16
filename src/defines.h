@@ -31,4 +31,8 @@ typedef char pt_result_t;
 #define HI(x) ((x >> 8) & 0xFF)
 #define LO(x) ((x) & 0xFF)
 
+#define MEMBER_SIZE(type, member) (((type *)0)->member)
+#define TEXT(x) XTEXT(x)
+#define XTEXT(x) #x
+
 #endif//DEFINES_H
