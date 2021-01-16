@@ -16,8 +16,9 @@ typedef uint8_t argc_t;
 struct shell_program
 {
     pt_result_t (*func)(struct pt *, const shell_data_t *, void *);
+    PGM_P (*name)(void);
+    PGM_P (*description)(void);
     void *data;
-    PGM_P name;
 };
 
 struct shell_data
@@ -31,6 +32,20 @@ struct shell_data
 extern void shell_init(shell_data_t *data, shell_program_t *programs, size_t programs_count);
 
 extern PT_THREAD(shell_exec(struct pt *pt, shell_data_t *data, char *command));
+
+extern PT_THREAD(shell_putc(struct pt *pt, char c));
+extern PT_THREAD(shell_puts(struct pt *pt, const char *s));
+extern PT_THREAD(shell_puts_P(struct pt *pt, PGM_P s));
+
+static inline shell_program_t *shell_program_begin(const shell_data_t *data)
+{
+    return data->pbegin;
+}
+
+static inline shell_program_t *shell_program_end(const shell_data_t *data)
+{
+    return data->pend;
+}
 
 static inline argc_t shell_argc(const shell_data_t *data)
 {
