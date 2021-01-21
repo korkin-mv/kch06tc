@@ -2,13 +2,15 @@ cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_C_COMPILER avr-gcc)
+set(CMAKE_CXX_COMPILER avr-g++)
 set(CMAKE_ASM_COMPILER avr-gcc)
-set(CMAKE_CXX_FLAGS_RELEASE "-Os")
 
-project(KCH06TC LANGUAGES C VERSION 1.0)
+project(KCH06TC LANGUAGES C CXX VERSION 1.0)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(MCU atmega88pa)
 set(F_CPU 8000000UL)
@@ -46,9 +48,10 @@ add_link_options(
 
 include_directories(
     lib/
+    lib/YCMOS/include/
 )
 
-file(GLOB SRC_FILES "src/*.c" "src/sh/*.c")
+file(GLOB SRC_FILES "src/*.cpp")
 
 add_executable(${PROJECT_NAME} ${SRC_FILES})
 
