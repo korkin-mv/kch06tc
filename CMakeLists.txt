@@ -47,11 +47,11 @@ add_link_options(
 )
 
 include_directories(
-    lib/
     lib/YCMOS/include/
+    lib/YCMOS/lib
 )
 
-file(GLOB SRC_FILES "src/*.cpp")
+file(GLOB SRC_FILES "src/*.cpp" "lib/YCMOS/src/*.cpp")
 
 add_executable(${PROJECT_NAME} ${SRC_FILES})
 
