@@ -1,0 +1,3 @@
+[submodule "lib/YCMOS"]
+	path = lib/YCMOS
+	url = https://github.com/korkin-mv/YCMOS.git
